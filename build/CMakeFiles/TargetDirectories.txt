@@ -1,0 +1,3 @@
+C:/Users/hk6dh/Downloads/mugi_sdl2/build/CMakeFiles/mugi.dir
+C:/Users/hk6dh/Downloads/mugi_sdl2/build/CMakeFiles/edit_cache.dir
+C:/Users/hk6dh/Downloads/mugi_sdl2/build/CMakeFiles/rebuild_cache.dir
