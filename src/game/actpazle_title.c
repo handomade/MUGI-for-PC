@@ -186,8 +186,8 @@ extern void Input_BlockButton(void);
 // ロゴ高さ105px = 6.5行。ロゴy=13px → 13+105=118px = 7.4行
 // メニューは行9〜13に配置
 #define MENU_Y_BASE  16
-#define MENU_X_LABEL 5   // "GAME START"等の左端
-#define MENU_X_CURSOR 3  // カーソルX（ラベルの2文字左）
+#define MENU_X_LABEL 9   // "GAME START"等の左端
+#define MENU_X_CURSOR 7  // カーソルX（ラベルの2文字左）
 
 // ステージ選択表示X
 #define STAGE_DISP_X 16
@@ -209,8 +209,8 @@ static void title_redraw_menu(u8 cursor, u8 stage) {
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 2, "PASSWORD");
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 3, "SETTING");
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 4, "EDIT MODE");
-    S_Print_Text(0, 7, 23, "HIGH SCORE");
-    S_Print_Int_Padded32(0, 18, 23, high_score, 6, '0');
+    S_Print_Text(0, 8, 23, "HIGH-SCORE:");
+    S_Print_Int_Padded32(0, 19, 23, high_score, 6, '0');
     S_Print_Text(0, 3, 24, "2026 HANDO;S GAME CHANNEL");
     // カーソルと選択状態
     for(u8 i = 0; i < MENU_COUNT; i++)
@@ -273,8 +273,8 @@ void Game_Title() {
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 4, "EDIT MODE");
 
     // ハイスコア（行22）
-    S_Print_Text(0, 7, 23, "HIGH SCORE");
-    S_Print_Int_Padded32(0, 18, 23, high_score, 6, '0');
+    S_Print_Text(0, 8, 23, "HIGH-SCORE:");
+    S_Print_Int_Padded32(0, 19, 23, high_score, 6, '0');
 
     // コピーライト（行24）
     S_Print_Text(0, 3, 24, "2026 HANDO;S GAME CHANNEL");
@@ -541,8 +541,8 @@ void Game_Title() {
                             S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 2, "PASSWORD");
                             S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 3, "SETTING");
                             S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 4, "EDIT MODE");
-                            S_Print_Text(0, 7, 23, "HIGH SCORE");
-                            S_Print_Int_Padded32(0, 18, 23, high_score, 6, '0');
+                            S_Print_Text(0, 8, 23, "HIGH-SCORE:");
+                            S_Print_Int_Padded32(0, 19, 23, high_score, 6, '0');
                             S_Print_Text(0, 3, 24, "2026 HANDO;S GAME CHANNEL");
                             menu_input_cooldown = 15;
                             break;

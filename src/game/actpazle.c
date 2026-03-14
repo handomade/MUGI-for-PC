@@ -1552,7 +1552,7 @@ void start_block_sprite_and_clear(u8 sprite_id, u8 tile_x, u8 tile_y, u8 block_t
     Tile_SelectBank(0);
     //Tile_DrawTile(tile_x, tile_y, (current_stage % 5 == 0) ? TILE_EMPTY : TILE_FLOOR);
     if(current_stage % 5 == 0) {
-        Tile_FillTile(tile_x, tile_y, 1);
+        Copy_MysteryBgTile(tile_x, tile_y);
     } else {
         Tile_DrawTile(tile_x, tile_y, TILE_FLOOR);
     }
@@ -2230,9 +2230,7 @@ void Stage_start(){
             }		
         }            
     }else{
-        for(u8 i=0;i<48;i++){
-            VDP_CommandPSET(Math_GetRandomMax8(256),Math_GetRandomMax8(180)+32+512,Math_GetRandomMax8(13+2),0);
-        }
+        Draw_MysteryBg();
     }
     
     memcpy(g_TileMap, g_stage_map_table[current_stage], 208);

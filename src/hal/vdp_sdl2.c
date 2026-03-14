@@ -21,7 +21,7 @@
 #define FONT_H           8
 #define FONT_Y          64
 #define FONT_FIRST    0x20
-#define TILE_BANK_COUNT  5
+#define TILE_BANK_COUNT  6
 
 // --- グローバル (main.cから参照) ---
 SDL_Renderer* g_renderer  = NULL;
@@ -87,6 +87,48 @@ int VDP_LoadPicdata(const char* bmp_path) {
 
     fprintf(stderr, "VDP_LoadPicdata OK: %s (bank1=tile, bank2=sprite, bank4=font_opaque)\n", bmp_path);
     return 0;
+}
+
+// mystery_bg: 256x208px を bank5 として読み込む
+// 将来ステージごとの別画像に対応できるよう path を引数にしている
+int VDP_LoadMysteryBg(const char* bmp_path) {
+    SDL_Surface* surf = SDL_LoadBMP(bmp_path);
+    if (!surf) { fprintf(stderr, "VDP_LoadMysteryBg: %s\n", SDL_GetError()); return -1; }
+    if (s_bank_tex[5]) SDL_DestroyTexture(s_bank_tex[5]);
+    s_bank_tex[5] = SDL_CreateTextureFromSurface(g_renderer, surf);
+    SDL_FreeSurface(surf);
+    if (!s_bank_tex[5]) { fprintf(stderr, "VDP_LoadMysteryBg: bank5 failed\n"); return -1; }
+    SDL_SetTextureBlendMode(s_bank_tex[5], SDL_BLENDMODE_NONE);
+    fprintf(stderr, "VDP_LoadMysteryBg OK: %s (bank5)\n", bmp_path);
+    return 0;
+}
+
+// mystery_bg を page2(作業バッファ) に中央寄せで描画 (y=2px, 256x208px)
+// GAME_H=212, 画像=208px → 上下2pxずつ黒
+void Draw_MysteryBg(void) {
+    if (!s_bank_tex[5]) return;
+    SDL_SetRenderTarget(g_renderer, g_screen[1]); // page2=g_screen[1]
+    // 上下の黒帯
+    SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
+    SDL_Rect top = {0, 0, GAME_W, 2};
+    SDL_Rect bot = {0, 210, GAME_W, 2};
+    SDL_RenderFillRect(g_renderer, &top);
+    SDL_RenderFillRect(g_renderer, &bot);
+    // 画像を中央(y=2)に描画
+    SDL_Rect dst = {0, 2, 256, 208};
+    SDL_RenderCopy(g_renderer, s_bank_tex[5], NULL, &dst);
+}
+
+// ブロックが消えた跡に mystery_bg の同座標を切り出してコピー (page2 に描画)
+// tx,ty: タイルグリッド座標 (各16px)
+void Copy_MysteryBgTile(u8 tx, u8 ty) {
+    if (!s_bank_tex[5]) return;
+    int px = tx * 16;
+    int py = ty * 16 + 2; // y=2px オフセット(中央寄せ分)
+    SDL_Rect src = {px, py - 4, 16, 16}; // 画像内座標(2px上)
+    SDL_Rect dst = {px, py - 2, 16, 16}; // スクリーン座標(2px上)
+    SDL_SetRenderTarget(g_renderer, g_screen[1]);
+    SDL_RenderCopy(g_renderer, s_bank_tex[5], &src, &dst);
 }
 
 int VDP_CreateScreenTextures(void) {
