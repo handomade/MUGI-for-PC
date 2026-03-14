@@ -213,4 +213,5 @@ CMakeFiles/mugi.dir/src/game/actpazle.c.obj: \
  C:/Users/hk6dh/Downloads/mugi_sdl2/include/audio_print_hal.h \
  C:/Users/hk6dh/Downloads/mugi_sdl2/include/all_stage_data.h \
  C:\Users\hk6dh\Downloads\mugi_sdl2\src\game\actpazle_title.c \
- C:\Users\hk6dh\Downloads\mugi_sdl2\src\game\actpazle_setting.c
+ C:\Users\hk6dh\Downloads\mugi_sdl2\src\game\actpazle_setting.c \
+ C:\Users\hk6dh\Downloads\mugi_sdl2\src\game\actpazle_ranking.c

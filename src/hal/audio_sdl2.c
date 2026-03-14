@@ -16,8 +16,11 @@ static const char* BGM_FILES[] = {
     NULL,                       // 3: BGM_STOP
     "assets/bgm/mystery.ogg",  // 4: BGM_MYSTERY
     "assets/bgm/ending.ogg",   // 5: BGM_ENDING
+    "assets/bgm/ranking.ogg",  // 6: BGM_RANKING
+    "assets/bgm/name_entry.ogg", // 7: BGM_NAME_ENTRY
+    "assets/bgm/fanfare.ogg",  // 8: BGM_FANFARE
 };
-#define BGM_COUNT  6
+#define BGM_COUNT  9
 
 // SFXファイルパス
 static const char* SFX_FILES[] = {
@@ -81,7 +84,7 @@ void AKG_Play(u8 bgm_id, u16 ram_addr) {
     // BGM_STOP=3
     if (bgm_id == 3) { Mix_HaltMusic(); return; }
     if (bgm_id >= BGM_COUNT || !s_bgm[bgm_id]) return;
-    int loops = (bgm_id == 2 || bgm_id == 5) ? 0 : -1;  // win.ogg(2)・ending.ogg(5)は1回再生
+    int loops = (bgm_id == 2 || bgm_id == 5 || bgm_id == 8) ? 0 : -1;  // win(2)・ending(5)・fanfare(8)は1回再生
     Mix_PlayMusic(s_bgm[bgm_id], loops);
 }
 

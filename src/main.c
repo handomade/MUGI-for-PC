@@ -55,6 +55,8 @@ static int sdl2_init(void) {
     if (VDP_LoadPicdata("assets/picdata.bmp") < 0) return 0;
     // mystery_bg をバンク5として読み込む（失敗しても続行）
     VDP_LoadMysteryBg("assets/mystery_bg.bmp");
+    // ranking_illust をバンク6として読み込む（失敗しても続行）
+    VDP_LoadRankingIllust("assets/ranking_illust.bmp");
 
     VDP_ClearVRAM();
     Audio_Init();

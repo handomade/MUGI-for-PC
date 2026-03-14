@@ -221,6 +221,7 @@ CMakeFiles/mugi.dir/src/game/actpazle.c.obj: C:/Users/hk6dh/Downloads/mugi_sdl2/
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/xsaveoptintrin.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/xsavesintrin.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/xtestintrin.h \
+  C:/Users/hk6dh/Downloads/mugi_sdl2/src/game/actpazle_ranking.c \
   C:/Users/hk6dh/Downloads/mugi_sdl2/src/game/actpazle_setting.c \
   C:/Users/hk6dh/Downloads/mugi_sdl2/src/game/actpazle_title.c
 
@@ -1296,6 +1297,8 @@ C:/msys64/ucrt64/include/SDL2/SDL_timer.h:
 C:/msys64/ucrt64/include/SDL2/SDL_render.h:
 
 C:/Users/hk6dh/Downloads/mugi_sdl2/src/hal/audio_sdl2.c:
+
+C:/Users/hk6dh/Downloads/mugi_sdl2/src/game/actpazle_ranking.c:
 
 C:/msys64/ucrt64/include/SDL2/SDL_audio.h:
 

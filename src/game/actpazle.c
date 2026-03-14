@@ -6,6 +6,9 @@
 void vblank_process(void);  // SDL2版前方宣言
 void ui_update(void);
 void pause_draw_guide(void);
+void Ranking_Load(void);
+void Ranking_Save(void);
+void Ranking_DrawCopyright(void);
 void Stage_start(void);
 ////データ類のインクルード
 // #include "picdata.h"
@@ -52,6 +55,10 @@ void Stage_start(void);
 #define IS_SW(t) ((t)==TILE_SWITCH_PLUS||(t)==TILE_SWITCH_MINUS)
 #define TILE_TO_DIR(t) ((t)==TILE_ARROW_DOWN?0:(t)==TILE_ARROW_UP?1:(t)==TILE_ARROW_LEFT?2:3)
 u8  g_Frame = 0;
+
+// タイトル↔ランキングスクロール用オフセット（0=タイトル, GAME_W=ランキング）
+// 正の値=右にスクロール（タイトルが見える）、増やすとランキングへ
+i16 g_scroll_x = 0;   // 0〜GAME_W の範囲
 u8  pt = 0;
 u8  g_VBlank = 0;
 u8  draw_page = 2;
@@ -94,6 +101,9 @@ enum BGM_ID{
     BGM_STOP,
     BGM_MYSTERY,
     BGM_ENDING,
+    BGM_RANKING,
+    BGM_NAME_ENTRY,
+    BGM_FANFARE,
 };
 
 enum SE_ID{
@@ -2555,7 +2565,66 @@ void WaitVBlank(void)
 
     // 描画
     SDL_SetRenderTarget(g_renderer, NULL);
-    SDL_RenderCopy(g_renderer, g_screen[0], NULL, NULL);
+    // 常に黒でクリアしてからレンダリング（フルスクリーン時の残像防止）
+    SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
+    SDL_RenderClear(g_renderer);
+
+    if (g_scroll_x == 0) {
+        // 通常描画（タイトルのみ）
+        SDL_RenderCopy(g_renderer, g_screen[0], NULL, NULL);
+    } else {
+        // スクロール中 / ランキング表示中:
+        // LogicalSizeを一時無効化して実ピクセル座標で描画
+        // SDL_RenderSetLogicalSize有効時はLetterboxで左右に黒帯が入る
+        // → 実描画領域(rw×rh)とオフセット(ox,oy)を自前で計算する
+        SDL_RenderSetLogicalSize(g_renderer, 0, 0);
+        int win_w, win_h;
+        SDL_GetRendererOutputSize(g_renderer, &win_w, &win_h);
+
+        // ゲーム論理サイズをウィンドウに収めるscaleとオフセット
+        float fsx = (float)win_w / GAME_W;
+        float fsy = (float)win_h / GAME_H;
+        float sc  = (fsx < fsy) ? fsx : fsy;
+        int rw = (int)(GAME_W * sc);
+        int rh = (int)(GAME_H * sc);
+        int ox = (win_w - rw) / 2;
+        int oy = (win_h - rh) / 2;
+
+        // g_scroll_x(0〜GAME_W)をrw基準のオフセットに変換
+        int off = (int)((float)g_scroll_x / GAME_W * rw);
+
+        // スクロール領域: y=0〜行23まで (192px分)
+        // 行24(コピーライト)は固定表示
+        #define SCROLL_ROWS     24          // スクロールする行数
+        #define SCROLL_PX       (SCROLL_ROWS * 8)  // = 192px
+
+        // スクロール対象のClipRect（実ピクセル座標）
+        int scroll_rh = (int)(sc * SCROLL_PX);  // 192論理pxを実ピクセルに変換
+        SDL_Rect clip = { ox, oy, rw, scroll_rh };
+        SDL_RenderSetClipRect(g_renderer, &clip);
+
+        SDL_Rect src_scroll = { 0, 0, GAME_W, SCROLL_PX };  // テクスチャの上192px
+        int dst_scroll_h = scroll_rh;
+        SDL_Rect dst_title   = { ox - off,      oy, rw, dst_scroll_h };
+        SDL_Rect dst_ranking = { ox + rw - off,  oy, rw, dst_scroll_h };
+        if (dst_title.x + rw > 0)
+            SDL_RenderCopy(g_renderer, g_screen[0], &src_scroll, &dst_title);
+        if (dst_ranking.x < win_w)
+            SDL_RenderCopy(g_renderer, g_screen[1], &src_scroll, &dst_ranking);
+
+        SDL_RenderSetClipRect(g_renderer, NULL); // クリップ解除
+
+        // 行24（コピーライト）は固定: タイトル側(g_screen[0])から直接コピー
+        int fixed_src_y  = SCROLL_PX;                     // 192px
+        int fixed_src_h  = GAME_H - SCROLL_PX;            // 20px
+        int fixed_dst_y  = oy + scroll_rh;
+        int fixed_dst_h  = (int)(sc * fixed_src_h);
+        SDL_Rect src_fixed = { 0, fixed_src_y, GAME_W, fixed_src_h };
+        SDL_Rect dst_fixed = { ox, fixed_dst_y, rw, fixed_dst_h };
+        SDL_RenderCopy(g_renderer, g_screen[0], &src_fixed, &dst_fixed);
+
+        SDL_RenderSetLogicalSize(g_renderer, GAME_W, GAME_H);
+    }
 
     // CRTスキャンライン（FILTER=CRT時）
     // 内部ピクセル行（256x212）の各行の下端に半透明黒線を引く
@@ -2654,6 +2723,7 @@ void game_main(void)
     Game_Init();
     Sprite_ini();
     Setting_Load();
+    Ranking_Load();
     VDP_CreateScreenTextures(); // フィルター設定を反映してからテクスチャ生成
     Setting_ApplyWindowScale(g_setting_window_scale);
     Setting_ApplyFullscreen(g_setting_fullscreen);
@@ -2768,3 +2838,4 @@ void game_main(void)
 
 #include "actpazle_title.c"
 #include "actpazle_setting.c"
+#include "actpazle_ranking.c"

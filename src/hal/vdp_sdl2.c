@@ -21,7 +21,7 @@
 #define FONT_H           8
 #define FONT_Y          64
 #define FONT_FIRST    0x20
-#define TILE_BANK_COUNT  6
+#define TILE_BANK_COUNT  7
 
 // --- グローバル (main.cから参照) ---
 SDL_Renderer* g_renderer  = NULL;
@@ -131,7 +131,28 @@ void Copy_MysteryBgTile(u8 tx, u8 ty) {
     SDL_RenderCopy(g_renderer, s_bank_tex[5], &src, &dst);
 }
 
-int VDP_CreateScreenTextures(void) {
+// ranking_illust: ランキング画面用イラスト (bank6)
+int VDP_LoadRankingIllust(const char* bmp_path) {
+    SDL_Surface* surf = SDL_LoadBMP(bmp_path);
+    if (!surf) { fprintf(stderr, "VDP_LoadRankingIllust: %s\n", SDL_GetError()); return -1; }
+    if (s_bank_tex[6]) SDL_DestroyTexture(s_bank_tex[6]);
+    s_bank_tex[6] = SDL_CreateTextureFromSurface(g_renderer, surf);
+    SDL_FreeSurface(surf);
+    if (!s_bank_tex[6]) { fprintf(stderr, "VDP_LoadRankingIllust: bank6 failed\n"); return -1; }
+    SDL_SetTextureBlendMode(s_bank_tex[6], SDL_BLENDMODE_NONE);
+    fprintf(stderr, "VDP_LoadRankingIllust OK: %s (bank6)\n", bmp_path);
+    return 0;
+}
+
+// ランキングイラストをpage0に描画 (行17〜22, 中央寄せ, 99×56px)
+void Draw_RankingIllust(void) {
+    if (!s_bank_tex[6]) return;
+    SDL_SetRenderTarget(g_renderer, g_screen[0]);
+    SDL_Rect dst = { 78, 136, 99, 56 };
+    SDL_RenderCopy(g_renderer, s_bank_tex[6], NULL, &dst);
+}
+
+
     // g_setting_filter==2(BLUR)時はリニアフィルタリングを使用
     extern u8 g_setting_filter;
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,

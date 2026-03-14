@@ -65,8 +65,10 @@ void VDP_CommandPSET(u16 x, u16 y, u8 color, u8 op);
 // 初期化/終了 (main.c から呼ぶ)
 int  VDP_LoadPicdata(const char* bmp_path);
 int  VDP_LoadMysteryBg(const char* bmp_path);
+int  VDP_LoadRankingIllust(const char* bmp_path);
 void Draw_MysteryBg(void);
-void Copy_MysteryBgTile(u8 tx, u8 ty);  // assets/picdata.bmp をバンク1に読み込む
+void Copy_MysteryBgTile(u8 tx, u8 ty);
+void Draw_RankingIllust(void);  // assets/picdata.bmp をバンク1に読み込む
 int  VDP_CreateScreenTextures(void);
 void VDP_Cleanup(void);
 void Draw_TitleLogo(u8 page, int dst_x, int dst_y);  // タイトルロゴ描画

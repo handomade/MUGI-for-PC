@@ -32,6 +32,8 @@ extern u8 pt;
 extern u16 ending_timer;
 extern u8 ending_message_index;
 extern void WaitVBlank(void);
+extern void Ranking_Draw(void);
+extern i16  g_scroll_x;
 extern u8 g_TileMap[];
 extern u32 high_score;
 
@@ -255,6 +257,15 @@ void Game_Title() {
     u8 menu_input_cooldown = 0;
     u8 confirm_quit = 0;        // 0=通常 1=終了確認ダイアログ中
 
+    // スクロールステート
+    // 0=タイトル待機, 1=左スクロール中, 2=ランキング表示, 3=右スクロール中
+    u8  scroll_state  = 0;
+    u16 scroll_timer  = 0;      // 待機カウンタ
+    u8  scroll_clear  = 0;      // スクロール終了後にウィンドウクリアが必要
+    #define SCROLL_WAIT_FRAMES  (8 * 50)   // 8秒(50fps)
+    #define RANKING_SHOW_FRAMES (10 * 50)  // 10秒
+    #define SCROLL_SPEED        4           // px/フレーム（64フレーム≒1.3秒で256px）
+
     // ────────────────────────────────────────
     // 静的UI描画（ループ外で1回だけ）
     // ────────────────────────────────────────
@@ -289,6 +300,91 @@ void Game_Title() {
 
         if(input_cooldown  > 0) input_cooldown--;
         if(menu_input_cooldown > 0) menu_input_cooldown--;
+
+        // ────────────────────────
+        // スクロールステート管理
+        // ────────────────────────
+        {
+            // キー入力があればスクロール中止してタイトルへ戻す
+            u8 any_key = IsUpPressed() || IsDownPressed() || IsLeftPressed() || IsRightPressed()
+                      || IsButtonPressed() || Keyboard_IsKeyPressed(KEY_ENTER)
+                      || Keyboard_IsKeyPressed(KEY_ESC) || Keyboard_IsKeyPressed(KEY_SPACE);
+
+            if(scroll_state != 0 && any_key) {
+                // 即タイトルに戻す
+                scroll_state = 0;
+                scroll_timer = 0;
+                g_scroll_x   = 0;
+                scroll_clear = 1;
+                next_bgm     = BGM_TITLE;
+                menu_input_cooldown = 15;
+            } else {
+                switch(scroll_state) {
+                    case 0: // タイトル待機
+                        scroll_timer++;
+                        if(scroll_timer >= SCROLL_WAIT_FRAMES) {
+                            // ランキング画面を一時的にpage0に描画してg_screen[1]へコピー
+                            Ranking_Draw();  // page0に描画
+                            // g_screen[0]の内容をg_screen[1]にコピー
+                            extern SDL_Renderer* g_renderer;
+                            extern SDL_Texture*  g_screen[];
+                            SDL_SetRenderTarget(g_renderer, g_screen[1]);
+                            SDL_RenderCopy(g_renderer, g_screen[0], NULL, NULL);
+                            SDL_SetRenderTarget(g_renderer, NULL);
+                            // タイトル画面を再描画してpage0に戻す
+                            title_redraw_menu(menu_cursor, current_stage);
+                            scroll_state = 1;
+                            scroll_timer = 0;
+                            // BGMはタイトル曲のまま継続
+                        }
+                        break;
+                    case 1: // 左スクロール中（タイトル→ランキング）
+                        g_scroll_x += SCROLL_SPEED;
+                        if(g_scroll_x >= GAME_W) {
+                            g_scroll_x   = GAME_W;
+                            scroll_state = 2;
+                            scroll_timer = 0;
+                        }
+                        break;
+                    case 2: // ランキング表示中
+                        scroll_timer++;
+                        if(scroll_timer >= RANKING_SHOW_FRAMES) {
+                            scroll_state = 3;
+                            scroll_timer = 0;
+                            // BGMはタイトル曲のまま継続
+                        }
+                        break;
+                    case 3: // 右スクロール中（ランキング→タイトル）
+                        g_scroll_x -= SCROLL_SPEED;
+                        if(g_scroll_x <= 0) {
+                            g_scroll_x   = 0;
+                            scroll_state = 0;
+                            scroll_timer = 0;
+                            scroll_clear = 1;
+                        }
+                        break;
+                }
+            }
+            // スクロール終了後の1フレーム: ウィンドウ全体を黒クリアしてタイトル再描画
+            if(scroll_clear) {
+                scroll_clear = 0;
+                extern SDL_Renderer* g_renderer;
+                SDL_SetRenderTarget(g_renderer, NULL);
+                SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
+                SDL_RenderClear(g_renderer);
+                SDL_RenderSetLogicalSize(g_renderer, GAME_W, GAME_H);
+                title_redraw_menu(menu_cursor, current_stage);
+            }
+            // スクロール中もタイトル側(g_screen[0])のSTAGE表示を更新
+            if(scroll_state != 0) {
+                u8 max_sel = (continue_stage > 0) ? continue_stage : 1;
+                if(current_stage < 1) current_stage = 1;
+                if(current_stage > max_sel) current_stage = max_sel;
+                S_Print_Text(0, MENU_X_LABEL + 11, MENU_Y_BASE + 0, "STAGE:");
+                S_Print_Int_Padded(0, MENU_X_LABEL + 17, MENU_Y_BASE + 0, current_stage, 2, '0');
+                goto title_loop_end;
+            }
+        }
 
         // ────────────────────────
         // パスワード入力モード
@@ -566,8 +662,8 @@ void Game_Title() {
         u8 max_selectable = (continue_stage > 0) ? continue_stage : 1;
         if(current_stage < 1) current_stage = 1;
         if(current_stage > max_selectable) current_stage = max_selectable;
-        S_Print_Text(0, 16, MENU_Y_BASE + 0, "STAGE:");
-        S_Print_Int_Padded(0, 22, MENU_Y_BASE + 0, current_stage, 2, '0');
+        S_Print_Text(0, MENU_X_LABEL + 11, MENU_Y_BASE + 0, "STAGE:");
+        S_Print_Int_Padded(0, MENU_X_LABEL + 17, MENU_Y_BASE + 0, current_stage, 2, '0');
 
         // カーソルスプライト表示（選択行の左に△）
         // カーソルはSW_Spriteではなくタイルフォントで代用（△=0x1Eをフォントで描画）
@@ -590,6 +686,7 @@ void Game_Title() {
                 s_pw_msg_type = 0;
             }
         }
+        title_loop_end:; // スクロール中はここにジャンプ
     }
 
     next_bgm = BGM_STOP;
