@@ -152,7 +152,7 @@ void Draw_RankingIllust(void) {
     SDL_RenderCopy(g_renderer, s_bank_tex[6], NULL, &dst);
 }
 
-
+int VDP_CreateScreenTextures(void) {
     // g_setting_filter==2(BLUR)時はリニアフィルタリングを使用
     extern u8 g_setting_filter;
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,
