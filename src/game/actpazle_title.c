@@ -254,6 +254,7 @@ void Game_Title() {
     static u8 menu_cursor = 0;  // 現在選択中のメニュー項目
     u8 menu_input_cooldown = 0;
     u8 confirm_quit = 0;        // 0=通常 1=終了確認ダイアログ中
+    u8 title_start_lock = 60;   // タイトル表示後60fはGAME START無効
 
     // スクロールステート
     // 0=タイトル待機, 1=左スクロール中, 2=ランキング表示, 3=右スクロール中
@@ -294,6 +295,7 @@ void Game_Title() {
 
         if(input_cooldown  > 0) input_cooldown--;
         if(menu_input_cooldown > 0) menu_input_cooldown--;
+        if(title_start_lock > 0) title_start_lock--;
 
         // ────────────────────────
         // スクロールステート管理
@@ -310,12 +312,16 @@ void Game_Title() {
                 scroll_timer = 0;
                 g_scroll_x   = 0;
                 scroll_clear = 1;
-                next_bgm     = BGM_TITLE;
+                // BGMはそのまま継続（再起動しない）
                 menu_input_cooldown = 15;
             } else {
                 switch(scroll_state) {
                     case 0: // タイトル待機
-                        scroll_timer++;
+                        if (!password_mode && !confirm_quit) {
+                            scroll_timer++;
+                        } else {
+                            scroll_timer = 0;
+                        }
                         if(scroll_timer >= SCROLL_WAIT_FRAMES) {
                             // ランキング画面を一時的にpage0に描画してg_screen[1]へコピー
                             Ranking_Draw();  // page0に描画
@@ -560,6 +566,7 @@ void Game_Title() {
             // ESCで終了確認ダイアログ
             if(Keyboard_IsKeyPressed(KEY_ESC) && menu_input_cooldown == 0) {
                 confirm_quit = 1;
+                scroll_timer = 0;
             }
             if(menu_input_cooldown == 0) {
                 // 上下でカーソル移動
@@ -568,11 +575,13 @@ void Game_Title() {
                     else menu_cursor = MENU_COUNT - 1;
                     menu_input_cooldown = 8;
                     next_se = SE_CURSOR;
+                    scroll_timer = 0;
                 } else if(IsDownPressed()) {
                     if(menu_cursor < MENU_COUNT - 1) menu_cursor++;
                     else menu_cursor = 0;
                     menu_input_cooldown = 8;
                     next_se = SE_CURSOR;
+                    scroll_timer = 0;
                 }
 
                 // 左右はGAME STARTのみステージ変更
@@ -582,18 +591,21 @@ void Game_Title() {
                         if(current_stage < max_selectable) current_stage++;
                         menu_input_cooldown = 6;
                         next_se = SE_CURSOR;
+                        scroll_timer = 0;
                     } else if(IsLeftPressed()) {
                         if(current_stage > 1) current_stage--;
                         menu_input_cooldown = 6;
                         next_se = SE_CURSOR;
+                        scroll_timer = 0;
                     }
                 }
 
                 // スペース/Aボタンで決定
                 if(IsButtonPressed()) {
-                    next_se = SE_BUTTON;
+                    next_se = (menu_cursor == MENU_GAME_START && title_start_lock > 0) ? 0xFF : SE_BUTTON;
                     switch(menu_cursor) {
                         case MENU_GAME_START:
+                            if (title_start_lock > 0) break;  // 60f以内はスタート不可
                             // ゲーム開始
                             next_bgm = BGM_STOP;
                             Tile_FillScreen(COLOR_BLACK);

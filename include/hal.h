@@ -111,6 +111,8 @@ void S_Print_Int(u8 page, u8 tx, u8 ty, u16 val);
 void S_Print_Int_Padded(u8 page, u8 tx, u8 ty, u16 val, u8 width, char pad);
 void S_Print_Int_Padded32(u8 page, u8 tx, u8 ty, u32 val, u8 width, char pad);
 void S_Print_Char(u8 page, u8 tx, u8 ty, char c);
+void S_Set_Font_Color(u8 r, u8 g, u8 b);  // フォント色変更 (COLOR命令相当)
+void S_Reset_Font_Color(void);             // 白にリセット
 
 // ============================================================
 // SW_Sprite (vdp_sdl2.c)

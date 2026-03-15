@@ -121,7 +121,9 @@ void Ranking_Draw(void) {
     Tile_FillScreen(COLOR_BLACK);
 
     // HIGH SCORE: y=3、中央寄せ
+    S_Set_Font_Color(255, 0, 0);
     S_Print_Text(0, 11, 3, "HIGH SCORE");
+    S_Reset_Font_Color();
 
     // ヘッダ: y=5、中央寄せ
     S_Print_Text(0,  4, 5, "RANK");
@@ -166,4 +168,101 @@ void Ranking_Draw(void) {
 // コピーライト行単体描画（スクロール中も固定表示するために分離）
 void Ranking_DrawCopyright(void) {
     S_Print_Text(0, 3, 24, "2026 HANDO;S GAME CHANNEL");
+}
+
+// ────────────────────────────────────────
+// ネームエントリー用ランキング描画
+// highlight_row : 入力中の行インデックス (0-9)
+// typing_name   : 入力バッファ
+// typing_len    : 入力済み文字数
+// entry_score   : 新エントリーのスコア
+// entry_stage   : 新エントリーのステージ
+// hl_r/g/b      : ハイライト行の色 (255,255,255=白=確定表示)
+// confirmed     : 0=挿入前描画, 1=挿入後描画(g_rankingそのまま)
+// ────────────────────────────────────────
+void Ranking_Draw_NameEntry(u8 highlight_row, const char* typing_name, u8 typing_len,
+                             u32 entry_score, u8 entry_stage,
+                             u8 hl_r, u8 hl_g, u8 hl_b, u8 confirmed) {
+    Tile_SetDrawPage(0);
+    Tile_SelectBank(0);
+    Tile_FillScreen(COLOR_BLACK);
+
+    S_Set_Font_Color(255, 0, 0);
+    S_Print_Text(0, 11, 3, "HIGH SCORE");
+    S_Reset_Font_Color();
+    S_Print_Text(0,  4, 5, "RANK");
+    S_Print_Text(0,  9, 5, "NAME");
+    S_Print_Text(0, 16, 5, "SCORE");
+    S_Print_Text(0, 23, 5, "STAGE");
+
+    for (u8 i = 0; i < RANKING_MAX; i++) {
+        u8 y = i + 7;
+
+        if (confirmed) {
+            // 挿入済み: g_rankingをそのまま描画、挿入行だけ指定色
+            if (i < g_ranking_count) {
+                if (i == highlight_row) S_Set_Font_Color(hl_r, hl_g, hl_b);
+                RankEntry* e = &g_ranking[i];
+                S_Print_Int_Padded(0, 4, y, i + 1, 2, ' ');
+                S_Print_Char(0, 6, y, '.');
+                char name_buf[7] = "      ";
+                u8 nlen = (u8)strlen(e->name);
+                if (nlen > 6) nlen = 6;
+                for (u8 c = 0; c < nlen; c++) name_buf[c] = e->name[c];
+                S_Print_Text(0, 8, y, name_buf);
+                S_Print_Int_Padded32(0, 15, y, e->score, 6, '0');
+                S_Print_Int_Padded(0, 23, y, e->lap, 1, ' ');
+                S_Print_Char(0, 24, y, '-');
+                S_Print_Int_Padded(0, 25, y, e->stage, 2, '0');
+                if (i == highlight_row) S_Reset_Font_Color();
+            } else {
+                S_Print_Text(0,  4, y, "--");
+                S_Print_Text(0,  8, y, "      ");
+                S_Print_Text(0, 15, y, "------");
+                S_Print_Text(0, 23, y, "--");
+            }
+        } else {
+            // 挿入前: highlight_rowに入力バッファ、他は既存データを1行ずらし
+            u8 is_highlight = (i == highlight_row);
+            if (is_highlight) {
+                S_Set_Font_Color(hl_r, hl_g, hl_b);
+                S_Print_Int_Padded(0, 4, y, i + 1, 2, ' ');
+                S_Print_Char(0, 6, y, '.');
+                for (u8 c = 0; c < 6; c++) {
+                    char ch = (c < typing_len && typing_name[c] != 0) ? typing_name[c] : ' ';
+                    S_Print_Char(0, 8 + c, y, ch);
+                }
+                S_Print_Int_Padded32(0, 15, y, entry_score, 6, '0');
+                S_Print_Char(0, 23, y, '1');
+                S_Print_Char(0, 24, y, '-');
+                S_Print_Int_Padded(0, 25, y, entry_stage, 2, '0');
+                S_Reset_Font_Color();
+            } else {
+                // highlight_rowより下の行は既存データを1行分下にずらして表示
+                u8 data_idx = (i < highlight_row) ? i : (u8)(i - 1);
+                if (data_idx < g_ranking_count) {
+                    RankEntry* e = &g_ranking[data_idx];
+                    S_Print_Int_Padded(0, 4, y, i + 1, 2, ' ');
+                    S_Print_Char(0, 6, y, '.');
+                    char name_buf[7] = "      ";
+                    u8 nlen = (u8)strlen(e->name);
+                    if (nlen > 6) nlen = 6;
+                    for (u8 c = 0; c < nlen; c++) name_buf[c] = e->name[c];
+                    S_Print_Text(0, 8, y, name_buf);
+                    S_Print_Int_Padded32(0, 15, y, e->score, 6, '0');
+                    S_Print_Int_Padded(0, 23, y, e->lap, 1, ' ');
+                    S_Print_Char(0, 24, y, '-');
+                    S_Print_Int_Padded(0, 25, y, e->stage, 2, '0');
+                } else {
+                    S_Print_Text(0,  4, y, "--");
+                    S_Print_Text(0,  8, y, "      ");
+                    S_Print_Text(0, 15, y, "------");
+                    S_Print_Text(0, 23, y, "--");
+                }
+            }
+        }
+    }
+
+    Draw_RankingIllust();
+    Ranking_DrawCopyright();
 }

@@ -49,6 +49,7 @@ typedef enum {
     KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5,
     KEY_ESC, KEY_ENTER, KEY_SPACE,
     KEY_DEL, KEY_BS,
+    KEY_PERIOD,
     KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT,
     KEY_MAX
 } KeyCode;

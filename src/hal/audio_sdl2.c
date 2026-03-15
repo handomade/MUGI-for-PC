@@ -17,10 +17,11 @@ static const char* BGM_FILES[] = {
     "assets/bgm/mystery.ogg",  // 4: BGM_MYSTERY
     "assets/bgm/ending.ogg",   // 5: BGM_ENDING
     "assets/bgm/ranking.ogg",  // 6: BGM_RANKING
-    "assets/bgm/name_entry.ogg", // 7: BGM_NAME_ENTRY
+    "assets/bgm/name_entry.wav", // 7: BGM_NAME_ENTRY
     "assets/bgm/fanfare.ogg",  // 8: BGM_FANFARE
+    "assets/bgm/top.ogg",       // 9: BGM_TOP
 };
-#define BGM_COUNT  9
+#define BGM_COUNT  10
 
 // SFXファイルパス
 static const char* SFX_FILES[] = {

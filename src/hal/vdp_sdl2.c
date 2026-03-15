@@ -311,6 +311,12 @@ void S_Print_Init(u8 bank, u8 u, u8 font_y) {
     s_print_font_y = font_y;
 }
 
+// フォント描画色（デフォルト白）
+static u8 s_font_r = 255, s_font_g = 255, s_font_b = 255;
+
+void S_Set_Font_Color(u8 r, u8 g, u8 b) { s_font_r = r; s_font_g = g; s_font_b = b; }
+void S_Reset_Font_Color(void)           { s_font_r = s_font_g = s_font_b = 255; }
+
 // ASCII→フォントBMPインデックス 逆引きテーブル
 // picdata.bmpのフォントレイアウト(y=64〜79, 8x8px, 32文字×2行):
 //   y=64行 [0〜31]:  A B C D E F G H I J K L M N O P Q R S T U V W X Y Z + - × / : '
@@ -342,9 +348,11 @@ static void draw_char(SDL_Texture* tgt, u8 ch, int px, int py) {
     int fy = (int)s_print_font_y + (idx / 32) * FONT_H;
     SDL_Rect src = {fx, fy, FONT_W, FONT_H};
     SDL_Rect dst = {px, py, FONT_W, FONT_H};
+    SDL_SetTextureColorMod(ft, s_font_r, s_font_g, s_font_b);
     SDL_SetRenderTarget(g_renderer, tgt);
     SDL_RenderCopy(g_renderer, ft, &src, &dst);
     SDL_SetRenderTarget(g_renderer, NULL);
+    SDL_SetTextureColorMod(ft, 255, 255, 255);
 }
 
 void S_Print_Text(u8 page, u8 tx, u8 ty, const char* str) {
