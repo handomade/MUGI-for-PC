@@ -1356,15 +1356,15 @@ void chk_blk_col() {
                     if(score > MAX_SCORE) score = MAX_SCORE;
                 }
                 ui_update();
-                // ステージ30の謎解き: HIE→KOME→AWAの順に倒す
-                // type 2=HIE, type 0=KOME, type 1=AWA
+                // ステージ30の謎解き: HIE→AWA→KOMEの順に倒す
+                // type 2=HIE, type 0=AWA, type 1=KOME
                 if(current_stage == 30) {
                     if(mystery_flag == 0 && enemy->type == 2) {
                         mystery_flag = 1; // HIEを倒した
                     } else if(mystery_flag == 1 && enemy->type == 0) {
-                        mystery_flag = 2; // KOMEを倒した
+                        mystery_flag = 2; // AWAを倒した
                     } else if(mystery_flag == 2 && enemy->type == 1) {
-                        mystery_flag = 3; // AWAを倒した
+                        mystery_flag = 3; // KOMEを倒した
                     }
                 }
             }
@@ -1385,14 +1385,14 @@ void chk_blk_col() {
                         if(score > MAX_SCORE) score = MAX_SCORE;
                     }
                     ui_update();
-                    // ステージ30の謎解き: HIE→KOME→AWAの順に倒す
+                    // ステージ30の謎解き: HIE→AWA右の順に倒す
                     if(current_stage == 30) {
                         if(mystery_flag == 0 && enemy->type == 2) {
                             mystery_flag = 1; // HIEを倒した
                         } else if(mystery_flag == 1 && enemy->type == 0) {
-                            mystery_flag = 2; // KOMEを倒した
+                            mystery_flag = 2; // AWAを倒した
                         } else if(mystery_flag == 2 && enemy->type == 1) {
-                            mystery_flag = 3; // AWAを倒した
+                            mystery_flag = 3; // KOMEを倒した
                         }
                     }
                 }
@@ -2072,6 +2072,7 @@ void ui_update(){
 
     S_Print_Text(0,0,1,"ENERGY");
     S_Print_Int_Padded(0,10,1,energy,3,'0');
+
 }
 
 // PAUSE中のガイド表示（画面中央）
@@ -2088,6 +2089,9 @@ void Stage_start(){
     const u8* g_stage_mugi    = g_stage_mugi_table[current_stage];
     const u8* g_stage_enemies = g_stage_enemies_table[current_stage];
     (void)g_stage_data; // memcpyはこの後のPletter置き換えで使用済み
+    // ステージデータは all_stage_data.h のルックアップテーブルで管理
+    // （g_stage_map_table / g_stage_mugi_table / g_stage_enemies_table）
+#if 0
     if(0) switch(current_stage) {  // 以下のcaseは無効化
         case 1:
             g_stage_data = g_stage1;
@@ -2120,6 +2124,10 @@ void Stage_start(){
             g_stage_enemies = g_stage6_enemies;
             break;
         case 7:
+        //     g_stage_data = g_stage22;
+        //     g_stage_mugi = g_stage22_mugi;
+        //     g_stage_enemies = g_stage22_enemies;
+        //     break;        
             g_stage_data = g_stage7;
             g_stage_mugi = g_stage7_mugi;
             g_stage_enemies = g_stage7_enemies;
@@ -2195,6 +2203,12 @@ void Stage_start(){
             g_stage_enemies = g_stage21_enemies;
             break;
         case 22:
+            // g_stage_data = g_stage7;
+            // g_stage_mugi = g_stage7_mugi;
+            // g_stage_enemies = g_stage7_enemies;
+            // break;            
+
+
             g_stage_data = g_stage22;
             g_stage_mugi = g_stage22_mugi;
             g_stage_enemies = g_stage22_enemies;
@@ -2246,6 +2260,7 @@ void Stage_start(){
             current_stage = 1;
             break;
     }
+#endif
 	init_energy_bullets();
 	init_superconductor_blocks();
 	initialize_enemies();
