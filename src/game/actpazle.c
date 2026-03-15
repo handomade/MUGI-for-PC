@@ -2540,6 +2540,7 @@ void Game_Over() {
         if (rank >= 0) {
             name_entry_rank = (u8)rank;
             if (rank == 0) next_bgm = BGM_FANFARE;
+            else next_se = SE_PAUSE;  // 2位〜10位ランクイン
         }
 
         S_Print_Text(0, 12, 8, "GAME OVER");
@@ -2919,7 +2920,7 @@ void game_main(void)
         // ジョイスティック読み取り（ポート1）
         joy_state = Joystick_Read(JOY_PORT_1);
    
-		if(g_Frame < 2) continue;
+		if(g_Frame < 2 && current_scene != SCENE_GAMEOVER) continue;
 		g_Frame = 0;
 
         switch(current_scene){
