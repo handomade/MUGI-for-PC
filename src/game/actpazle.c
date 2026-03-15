@@ -9,6 +9,8 @@ void pause_draw_guide(void);
 void Ranking_Load(void);
 void Ranking_Save(void);
 void Ranking_DrawCopyright(void);
+void Ranking_Insert(u8 rank, const char* name, u32 score, u8 stage, u8 lap);
+i8   Ranking_CheckRank(u32 new_score);
 void Stage_start(void);
 ////データ類のインクルード
 // #include "picdata.h"
@@ -212,6 +214,15 @@ u8 current_scene = SCENE_TITLE;
 u8 gameover_timer = 0;
 u16 ending_timer = 0;      // エンディング用タイマー
 u8 ending_message_index = 0; // 現在表示中のメッセージインデックス
+
+// ネームエントリー関連
+u8 name_entry_mode = 0;        // 0=初期表示, 1=入力中, 2=確定待機
+char name_entry_buffer[8];     // 入力バッファ（最大6字 + NULL + パディング）
+u8 name_entry_pos = 0;         // カーソル位置（0-5）
+u8 name_entry_rank = 0xFF;     // ランキング挿入位置 or 0xFF
+u8 name_entry_input_cooldown = 0; // キー入力クールダウン
+u8 name_entry_fanfare_done = 0;   // ファンファーレ完了フラグ
+u32 last_score = 0;            // GAME OVER時のスコア保存用
 
 // ステージデータ（各ステージのタイルマップを保存）
 // u8 stage_data[2][16*13];  // ステージ1, ステージ2のデータ
@@ -1639,6 +1650,15 @@ void Mugi_move(){
             next_se = SE_ENERGY;
         }
 	}
+    // F5: デバッグ用スコア加算機能
+    if(Keyboard_IsKeyPressed(KEY_F5)) {
+        if(score < MAX_SCORE) {
+            score += 1000;
+            if(score > MAX_SCORE) score = MAX_SCORE;
+        }
+        ui_update();
+    }
+    
     // ポーズ
     if(Keyboard_IsKeyPressed(KEY_F1)&&pause==0) {
         state = STATE_PAUSE;
@@ -2284,10 +2304,10 @@ void Stage_start(){
     mugi_y = g_stage_mugi[1] * 16;
     dir = g_stage_mugi[2];
     energy = g_stage_mugi[3];
-    SW_Sprite_Set(0, mugi_x, mugi_y, 0);
-	SW_Sprite_SetVisible(0, 1); 
-
-    // 敵初期位置読み込み
+    
+    // スプライトパターン: dir * 2 (右向きか左向きで異なるパターンを表示)
+    SW_Sprite_Set(0, mugi_x, mugi_y, dir * 2);
+    SW_Sprite_SetVisible(0, 1);
     Load_enemies(g_stage_enemies);
 
     for(u8 i=0;i<SW_SPRITE_MAX;i++)
@@ -2346,13 +2366,11 @@ void Game_Stage(){
                     EncodePassword(current_stage, g_password);
                     
                     if(score > high_score) high_score = score;  // ハイスコア更新
+                    last_score = score;  // ランキング用にスコア保存
                     score = 0;  // スコアをクリア
                     current_scene = SCENE_GAMEOVER;
                     state = STATE_IDLE;
                     gameover_timer = 180;
-                    S_Print_Text(0,12,8,"GAME OVER"); 
-                    S_Print_Text(0,11,10,"PASS:");
-                    S_Print_Text(0,16,10,g_password);
                     break;
 
                 }else{
@@ -2496,8 +2514,131 @@ void Game_Stage(){
 
 }
 
-// GAME  OVER画面
-void Game_Over();
+// GAME OVER画面
+void Game_Over() {
+    static u8 gc_init = 0;
+
+    // 初回のみ初期化
+    if(gc_init == 0) {
+        gc_init = 1;
+        Tile_SetDrawPage(0);
+        Tile_SelectBank(0);
+        Tile_FillScreen(COLOR_BLACK);
+
+        // ランキング判定
+        name_entry_rank = 0xFF;
+        name_entry_mode = 0;
+        name_entry_pos = 0;
+        name_entry_input_cooldown = 0;
+        for(u8 i = 0; i < 8; i++) name_entry_buffer[i] = 0;
+
+        i8 rank = Ranking_CheckRank(last_score);
+        if(rank >= 0) {
+            name_entry_rank = (u8)rank;
+            name_entry_mode = 1;  // 入力開始
+        }
+    }
+
+    // ランキング入り: ネームエントリー
+    if(name_entry_rank != 0xFF) {
+
+        if(name_entry_mode == 1) {
+            // 表示
+            S_Print_Text(0, 4, 3, "RANK IN! ENTER YOUR NAME:");
+            S_Print_Text(0, 6, 5, "RANK:");
+            S_Print_Int(0, 12, 5, (u32)(name_entry_rank + 1));
+            S_Print_Text(0, 5, 6, "SCORE:");
+            S_Print_Int_Padded32(0, 12, 6, last_score, 6, '0');
+
+            // 入力バッファ表示 [------]
+            S_Print_Char(0, 7, 9, '[');
+            for(u8 i = 0; i < 6; i++) {
+                u8 c = name_entry_buffer[i];
+                S_Print_Char(0, 8 + i, 9, (c != 0) ? c : '-');
+            }
+            S_Print_Char(0, 14, 9, ']');
+
+            // カーソル点滅 (0x01 = △)
+            if((g_Frame / 8) % 2 == 0) {
+                S_Print_Char(0, 8 + name_entry_pos, 10, 0x01);
+            } else {
+                S_Print_Char(0, 8 + name_entry_pos, 10, ' ');
+            }
+
+            S_Print_Text(0, 3, 12, "A-Z  SP:SPACE  BS:DEL");
+            S_Print_Text(0, 3, 13, "ENTER:OK  ESC:SKIP");
+
+            // キー入力
+            if(name_entry_input_cooldown > 0) {
+                name_entry_input_cooldown--;
+            } else {
+                // A-Z
+                for(u8 k = KEY_A; k <= KEY_Z; k++) {
+                    if(Keyboard_IsKeyPressed((KeyCode)k) && name_entry_pos < 6) {
+                        name_entry_buffer[name_entry_pos++] = 'A' + (k - KEY_A);
+                        name_entry_input_cooldown = 6;
+                        next_se = SE_CURSOR;
+                        break;
+                    }
+                }
+                // SPACE
+                if(Keyboard_IsKeyPressed(KEY_SPACE) && name_entry_pos < 6) {
+                    name_entry_buffer[name_entry_pos++] = ' ';
+                    name_entry_input_cooldown = 6;
+                    next_se = SE_CURSOR;
+                }
+                // BACKSPACE
+                else if(Keyboard_IsKeyPressed(KEY_BS) && name_entry_pos > 0) {
+                    name_entry_buffer[--name_entry_pos] = 0;
+                    name_entry_input_cooldown = 6;
+                    next_se = SE_CURSOR;
+                }
+                // ENTER: 確定
+                else if(Keyboard_IsKeyPressed(KEY_ENTER) && name_entry_pos > 0) {
+                    Ranking_Insert(name_entry_rank, name_entry_buffer, last_score, current_stage, 0);
+                    Ranking_Save();
+                    name_entry_mode = 2;
+                    gameover_timer = 120;
+                    Tile_FillScreen(COLOR_BLACK);
+                    S_Print_Text(0, 8, 9, "REGISTERED!");
+                    S_Print_Text(0, 7, 11, "THANK YOU!");
+                    next_se = SE_SET;
+                }
+                // ESC: スキップ
+                else if(Keyboard_IsKeyPressed(KEY_ESC)) {
+                    name_entry_mode = 2;
+                    gameover_timer = 60;
+                }
+            }
+            return;
+        }
+
+        // 確定後タイマー待機
+        if(name_entry_mode == 2) {
+            gameover_timer--;
+            if(gameover_timer == 0) {
+                gc_init = 0;
+                gameover_timer = 180;
+                Mugi_Lives = 3;
+                current_scene = SCENE_TITLE;
+            }
+            return;
+        }
+    }
+
+    // ランキング外: GAME OVER表示
+    S_Print_Text(0, 9, 8, "GAME OVER");
+    S_Print_Text(0, 6, 10, "SCORE:");
+    S_Print_Int_Padded32(0, 13, 10, last_score, 6, '0');
+    S_Print_Text(0, 5, 12, "PRESS ENTER OR SPACE");
+
+    if(IsButtonPressed() || Keyboard_IsKeyPressed(KEY_ENTER)) {
+        gc_init = 0;
+        gameover_timer = 180;
+        Mugi_Lives = 3;
+        current_scene = SCENE_TITLE;
+    }
+}
 
 //-----------------------------------------------------------------------------
 // VBlank interrupt

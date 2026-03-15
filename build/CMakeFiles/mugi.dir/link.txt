@@ -1,0 +1,3 @@
+C:\msys64\ucrt64\bin\cmake.exe -E rm -f CMakeFiles\mugi.dir/objects.a
+C:\msys64\ucrt64\bin\ar.exe qc CMakeFiles\mugi.dir/objects.a @CMakeFiles\mugi.dir\objects1.rsp
+C:\msys64\ucrt64\bin\cc.exe -O3 -DNDEBUG -mwindows -Wl,--whole-archive CMakeFiles\mugi.dir/objects.a -Wl,--no-whole-archive -o mugi.exe -Wl,--out-implib,libmugi.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\mugi.dir\linkLibs.rsp

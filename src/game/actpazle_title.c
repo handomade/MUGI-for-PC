@@ -211,8 +211,6 @@ static void title_redraw_menu(u8 cursor, u8 stage) {
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 2, "PASSWORD");
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 3, "SETTING");
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 4, "EDIT MODE");
-    S_Print_Text(0, 8, 23, "HIGH-SCORE:");
-    S_Print_Int_Padded32(0, 19, 23, high_score, 6, '0');
     S_Print_Text(0, 3, 24, "2026 HANDO;S GAME CHANNEL");
     // カーソルと選択状態
     for(u8 i = 0; i < MENU_COUNT; i++)
@@ -282,10 +280,6 @@ void Game_Title() {
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 2, "PASSWORD");
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 3, "SETTING");
     S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 4, "EDIT MODE");
-
-    // ハイスコア（行22）
-    S_Print_Text(0, 8, 23, "HIGH-SCORE:");
-    S_Print_Int_Padded32(0, 19, 23, high_score, 6, '0');
 
     // コピーライト（行24）
     S_Print_Text(0, 3, 24, "2026 HANDO;S GAME CHANNEL");
@@ -637,8 +631,6 @@ void Game_Title() {
                             S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 2, "PASSWORD");
                             S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 3, "SETTING");
                             S_Print_Text(0, MENU_X_LABEL, MENU_Y_BASE + 4, "EDIT MODE");
-                            S_Print_Text(0, 8, 23, "HIGH-SCORE:");
-                            S_Print_Int_Padded32(0, 19, 23, high_score, 6, '0');
                             S_Print_Text(0, 3, 24, "2026 HANDO;S GAME CHANNEL");
                             menu_input_cooldown = 15;
                             break;
@@ -692,38 +684,6 @@ void Game_Title() {
     next_bgm = BGM_STOP;
     next_se = SE_BUTTON;
     Tile_FillScreen(COLOR_BLACK);
-}
-// GAME OVER scene
-void Game_Over(){
-    if(gameover_timer > 0) {
-        for(i8 id = SW_SPRITE_MAX-1; id >= 0; --id)
-            SW_Sprite_RestoreCache(id);
-        update_enemies();
-
-    pt = ++pt % 4;
-        for(u8 id = 0; id < SW_SPRITE_MAX; ++id) {
-            if(SW_Sprite_IsVisible(id)) {
-                SW_Sprite_SaveCache(id);
-            }
-        }
-        SW_Sprite_DrawAll();
-
-        S_Print_Text(2,12,8,"GAME OVER");
-        S_Print_Text(2,11,10,"PASS:");
-        S_Print_Text(2,16,10,g_password);
-        SW_Sprite_COPY();
-        if(IsButtonPressed() || Keyboard_IsKeyPressed(KEY_ENTER)){
-            gameover_timer = 1;
-        }
-        gameover_timer--;
-    } else {
-        current_scene = SCENE_TITLE;
-        Tile_SetDrawPage(0);
-        Tile_SelectBank(0);
-        SW_Sprite_Init();
-        Tile_FillScreen(COLOR_BLACK);
-        Mugi_Lives = 3;
-    }
 }
 
 // ENDING scene
